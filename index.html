@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kuis Jepang">
+<meta name="theme-color" content="#0a0a14">
+<link rel="manifest" href="manifest.json">
+<title>日本語 Kata Kerja 🎌</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a14; --card:#12121f; --card2:#1a1a2e;
+  --border:rgba(255,255,255,0.07);
+  --red:#ff3d5a; --red2:#c9173a;
+  --gold:#ffc247; --teal:#00d9b1; --blue:#4f8ef7;
+  --white:#f0f0f8; --muted:#6b6b8a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;color:var(--white);overflow-x:hidden}
+
+.blob{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.15}
+.b1{width:500px;height:500px;background:var(--red);top:-200px;right:-150px}
+.b2{width:400px;height:400px;background:var(--blue);bottom:-150px;left:-100px}
+.b3{width:280px;height:280px;background:var(--gold);top:45%;left:55%;opacity:.07}
+.kanji-bg{position:fixed;bottom:40px;right:-10px;font-family:'Noto Sans JP',sans-serif;font-size:13rem;font-weight:900;color:rgba(255,255,255,.018);pointer-events:none;z-index:0;user-select:none;line-height:1}
+
+#app{position:relative;z-index:1}
+
+/* INSTALL */
+#ib{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#ff3d5a,#c9173a);padding:14px 18px;z-index:999;align-items:center;gap:12px;box-shadow:0 -4px 30px rgba(255,61,90,.4);animation:suUp .4s cubic-bezier(.2,.8,.4,1)}
+#ib.show{display:flex}
+@keyframes suUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.ib-txt{flex:1;font-size:.85rem;font-weight:600}
+.ib-txt small{display:block;opacity:.8;font-weight:400;font-size:.73rem}
+.ib-btn{background:#fff;color:#c9173a;border:none;padding:9px 20px;border-radius:30px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer}
+.ib-x{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;opacity:.7}
+
+/* HEADER */
+header{text-align:center;padding:46px 20px 22px}
+.hbadge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,61,90,.12);border:1px solid rgba(255,61,90,.25);color:var(--red);font-size:.72rem;font-weight:700;padding:5px 14px;border-radius:30px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
+header h1{font-family:'Noto Sans JP',sans-serif;font-size:2.1rem;font-weight:900;letter-spacing:-0.5px;line-height:1.1}
+header h1 em{color:var(--red);font-style:normal}
+header p{color:var(--muted);font-size:.85rem;margin-top:8px}
+
+/* MODE TABS */
+.tabs{display:flex;justify-content:center;padding:0 20px 18px;max-width:420px;margin:0 auto}
+.tab{flex:1;padding:11px 6px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s}
+.tab:first-child{border-radius:12px 0 0 12px}
+.tab:last-child{border-radius:0 12px 12px 0}
+.tab.on{background:var(--red);border-color:var(--red);color:#fff}
+
+/* STATS */
+.stats{display:flex;justify-content:center;gap:10px;padding:0 20px 14px;max-width:460px;margin:0 auto}
+.stat{flex:1;text-align:center;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 6px}
+.snum{font-size:1.55rem;font-weight:800;line-height:1}
+.slbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.sc .snum{color:var(--teal)} .sw .snum{color:var(--red)} .st .snum{color:var(--gold)}
+
+/* PROGRESS */
+.prog{max-width:460px;margin:0 auto;padding:0 20px 14px}
+.pmeta{display:flex;justify-content:space-between;font-size:.73rem;color:var(--muted);margin-bottom:5px}
+.ptrack{height:5px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:10px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* QUIZ AREA */
+#qa{max-width:460px;margin:0 auto 120px;padding:0 16px}
+#rs{max-width:460px;margin:0 auto 120px;padding:0 16px;display:none}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:26px 22px 22px;position:relative;overflow:hidden;animation:cIn .38s cubic-bezier(.2,.8,.4,1)}
+@keyframes cIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none scale(1)}}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red),var(--gold),var(--teal))}
+
+.qtag{display:inline-block;font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:18px}
+.qjp{font-family:'Noto Sans JP',sans-serif;font-size:2.5rem;font-weight:900;text-align:center;line-height:1.1;margin-bottom:5px;background:linear-gradient(135deg,#fff,#b0b0d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.qrm{text-align:center;color:var(--muted);font-size:.92rem;font-style:italic;margin-bottom:22px}
+.qprompt{text-align:center;color:var(--muted);font-size:.78rem;margin-bottom:16px;letter-spacing:.4px}
+.qidw{text-align:center;font-size:1.55rem;font-weight:800;color:var(--gold);margin-bottom:22px;line-height:1.2}
+
+/* OPTIONS */
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:13px;border:1.5px solid var(--border);background:rgba(255,255,255,.03);color:var(--white);font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:500;cursor:pointer;transition:all .17s;text-align:left;width:100%}
+.oletter{width:28px;height:28px;min-width:28px;border-radius:7px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--muted);transition:all .17s}
+.otext{flex:1;line-height:1.35}
+.ojp{font-family:'Noto Sans JP',sans-serif;font-size:1rem;font-weight:700;display:block}
+.orm{font-size:.72rem;color:var(--muted);font-style:italic;display:block;margin-top:2px}
+
+.opt:hover:not(:disabled){border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.06);transform:translateX(4px)}
+
+/* ✅ CORRECT — hanya yg benar yg hijau */
+.opt.correct{border-color:var(--teal);background:rgba(0,217,177,.1)}
+.opt.correct .oletter{background:var(--teal);color:#000;font-weight:800}
+.opt.correct .otext{color:var(--teal)}
+
+/* ❌ WRONG — hanya pilihan user yg salah jadi merah */
+.opt.wrong{border-color:var(--red);background:rgba(255,61,90,.08);animation:shk .35s ease}
+.opt.wrong .oletter{background:var(--red);color:#fff}
+.opt.wrong .otext{color:var(--red)}
+
+/* lainnya dimmed */
+.opt.dim{opacity:.3}
+
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* FEEDBACK */
+.fb{display:none;margin-top:13px;padding:12px 15px;border-radius:12px;font-size:.86rem;font-weight:600;align-items:flex-start;gap:9px;line-height:1.45}
+.fb.show{display:flex;animation:fuUp .25s ease}
+@keyframes fuUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.fb.ok{background:rgba(0,217,177,.1);color:var(--teal)}
+.fb.no{background:rgba(255,61,90,.1);color:#ff6b80}
+.fbi{font-size:1.15rem;margin-top:1px}
+
+/* NEXT BTN */
+.nxt{display:none;width:100%;margin-top:13px;padding:15px;border-radius:13px;background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;font-family:'DM Sans',sans-serif;font-size:.97rem;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(255,61,90,.3);transition:all .2s}
+.nxt.show{display:block;animation:fuUp .3s ease}
+.nxt:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,61,90,.45)}
+
+/* FLASHCARD */
+.fcwrap{perspective:1200px;cursor:pointer}
+.fcin{position:relative;width:100%;min-height:220px;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,2,.55,1)}
+.fcwrap.flip .fcin{transform:rotateY(180deg)}
+.fcf,.fcb{position:absolute;width:100%;min-height:220px;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 22px;border-radius:18px}
+.fcf{background:linear-gradient(145deg,#1a1a2e,#12121f)}
+.fcb{background:linear-gradient(145deg,#0d2620,#0a1a18);transform:rotateY(180deg)}
+.fchint{font-size:.7rem;color:var(--muted);margin-top:14px;letter-spacing:1px}
+.fcmean{font-size:1.45rem;font-weight:800;color:var(--teal);text-align:center}
+.fcnav{display:flex;gap:10px;margin-top:15px}
+.fcbtn{flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s}
+.fcbtn:hover{border-color:var(--gold);color:var(--gold)}
+.fcnxt{border-color:rgba(255,61,90,.4)!important;color:var(--red)!important}
+.fcnxt:hover{background:rgba(255,61,90,.1)!important}
+
+/* TYPE */
+.tyin{width:100%;margin-top:16px;padding:13px 17px;border-radius:12px;border:1.5px solid var(--border);background:rgba(255,255,255,.04);color:var(--white);font-family:'DM Sans',sans-serif;font-size:.97rem;outline:none;transition:border .2s}
+.tyin:focus{border-color:var(--gold)}
+.tysub{width:100%;margin-top:11px;padding:13px;border-radius:12px;background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.92rem;border:none;cursor:pointer;transition:all .2s}
+.tysub:hover{transform:translateY(-2px)}
+
+/* RESULT */
+.rcard{background:var(--card);border:1px solid var(--border);border-radius:28px;padding:42px 26px;text-align:center;animation:cIn .5s ease}
+.remoji{font-size:3.8rem;display:block;margin-bottom:10px}
+.rtitle{font-size:1.85rem;font-weight:800;margin-bottom:5px}
+.rsub{color:var(--muted);font-size:.88rem;margin-bottom:26px}
+.rpct{font-size:4.8rem;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:3px}
+.rpctlbl{color:var(--muted);font-size:.8rem;margin-bottom:26px}
+.rstats{display:flex;justify-content:center;gap:22px;margin-bottom:28px}
+.ri{text-align:center}
+.rinum{font-size:1.75rem;font-weight:800}
+.rilbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.rbtns{display:flex;flex-direction:column;gap:10px}
+.rbtn{padding:14px;border-radius:13px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.93rem;border:none;cursor:pointer;transition:all .2s}
+.rbp{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;box-shadow:0 4px 20px rgba(255,61,90,.3)}
+.rbs{background:transparent;border:1.5px solid var(--border);color:var(--muted)}
+.rbtn:hover{transform:translateY(-2px)}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<div class="kanji-bg">語</div>
+
+<div id="app">
+<div id="ib">
+  <div class="ib-txt">📱 Install Kuis Jepang<small>Simpan di home screen, bisa offline!</small></div>
+  <button class="ib-btn" id="ibbtn">Install</button>
+  <button class="ib-x" onclick="closeIB()">✕</button>
+</div>
+
+<header>
+  <div class="hbadge">🎌 Bahasa Jepang</div>
+  <h1>動詞 <em>Kata Kerja</em></h1>
+  <p>Hafal kosakata dengan cara yang menyenangkan!</p>
+</header>
+
+<div class="tabs">
+  <button class="tab on" onclick="setMode('pg')">📝 Pilihan Ganda</button>
+  <button class="tab" onclick="setMode('fc')">🃏 Flashcard</button>
+  <button class="tab" onclick="setMode('ty')">⌨️ Ketik</button>
+</div>
+
+<div class="stats">
+  <div class="stat sc"><div class="snum" id="sc">0</div><div class="slbl">Benar</div></div>
+  <div class="stat st"><div class="snum" id="st">0</div><div class="slbl">Dijawab</div></div>
+  <div class="stat sw"><div class="snum" id="sw">0</div><div class="slbl">Salah</div></div>
+</div>
+
+<div class="prog">
+  <div class="pmeta"><span id="ptxt">Soal 1</span><span id="ppct">0%</span></div>
+  <div class="ptrack"><div class="pfill" id="pfill" style="width:0%"></div></div>
+</div>
+
+<div id="qa"></div>
+<div id="rs"></div>
+</div>
+
+<script>
+// PWA
+let dp;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('ib').classList.add('show')});
+document.getElementById('ibbtn').addEventListener('click',async()=>{if(dp){dp.prompt();dp=null;closeIB()}});
+window.addEventListener('appinstalled',closeIB);
+function closeIB(){document.getElementById('ib').classList.remove('show')}
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+// DATA
+const V=[
+  // BELAJAR
+  {jp:"べんきょうします",rm:"benkyou shimasu",id:"belajar (sendiri)",cat:"📚 Belajar"},
+  {jp:"ならいます",rm:"naraimasu",id:"belajar dari guru",cat:"📚 Belajar"},
+  {jp:"まなびます",rm:"manabimasu",id:"belajar / mendalami",cat:"📚 Belajar"},
+  {jp:"れんしゅうします",rm:"renshuu shimasu",id:"berlatih",cat:"📚 Belajar"},
+  {jp:"しつもんします",rm:"shitsumon shimasu",id:"bertanya",cat:"📚 Belajar"},
+  {jp:"おしえます",rm:"oshiemasu",id:"mengajar / memberitahu",cat:"📚 Belajar"},
+  {jp:"わかります",rm:"wakarimasu",id:"mengerti",cat:"📚 Belajar"},
+  {jp:"りかいします",rm:"rikai shimasu",id:"memahami",cat:"📚 Belajar"},
+  {jp:"おぼえます",rm:"oboemasu",id:"mengingat / menghafal",cat:"📚 Belajar"},
+  {jp:"おもいだします",rm:"omoidashimasu",id:"mengingat kembali",cat:"📚 Belajar"},
+  {jp:"わすれます",rm:"wasuremasu",id:"lupa",cat:"📚 Belajar"},
+  {jp:"しらべます",rm:"shirabemasu",id:"memeriksa / mencari tahu",cat:"📚 Belajar"},
+  {jp:"はじめます",rm:"hajimemasu",id:"mulai",cat:"📚 Belajar"},
+  {jp:"おわります",rm:"owarimasu",id:"selesai / berakhir",cat:"📚 Belajar"},
+  // PEKERJAAN
+  {jp:"はたらきます",rm:"hatarakimasu",id:"bekerja",cat:"💼 Pekerjaan"},
+  {jp:"なおします",rm:"naoshimasu",id:"memperbaiki",cat:"💼 Pekerjaan"},
+  {jp:"そうじします",rm:"souji shimasu",id:"membersihkan",cat:"💼 Pekerjaan"},
+  {jp:"せんたくします",rm:"sentaku shimasu",id:"mencuci baju",cat:"💼 Pekerjaan"},
+  {jp:"かきます",rm:"kakimasu",id:"menulis",cat:"💼 Pekerjaan"},
+  {jp:"よみます",rm:"yomimasu",id:"membaca",cat:"💼 Pekerjaan"},
+  {jp:"みせます",rm:"misemasu",id:"memperlihatkan",cat:"💼 Pekerjaan"},
+  {jp:"わたします",rm:"watashimasu",id:"menyerahkan",cat:"💼 Pekerjaan"},
+  {jp:"だします",rm:"dashimasu",id:"mengeluarkan",cat:"💼 Pekerjaan"},
+  // SEHARI-HARI
+  {jp:"おきます",rm:"okimasu",id:"bangun tidur",cat:"🌅 Sehari-hari"},
+  {jp:"ねます",rm:"nemasu",id:"tidur",cat:"🌅 Sehari-hari"},
+  {jp:"やすみます",rm:"yasumimasu",id:"istirahat / libur",cat:"🌅 Sehari-hari"},
+  {jp:"きゅうけいします",rm:"kyuukei shimasu",id:"istirahat sejenak",cat:"🌅 Sehari-hari"},
+  {jp:"たべます",rm:"tabemasu",id:"makan",cat:"🌅 Sehari-hari"},
+  {jp:"しょくじします",rm:"shokuji shimasu",id:"makan bersama",cat:"🌅 Sehari-hari"},
+  {jp:"のみます",rm:"nomimasu",id:"minum",cat:"🌅 Sehari-hari"},
+  {jp:"すいます",rm:"suimasu",id:"menghisap / merokok",cat:"🌅 Sehari-hari"},
+  {jp:"あらいます",rm:"araimasu",id:"mencuci (tangan/badan)",cat:"🌅 Sehari-hari"},
+  // GERAK
+  {jp:"いきます",rm:"ikimasu",id:"pergi",cat:"🚶 Gerak"},
+  {jp:"きます",rm:"kimasu",id:"datang",cat:"🚶 Gerak"},
+  {jp:"かえります",rm:"kaerimasu",id:"pulang",cat:"🚶 Gerak"},
+  {jp:"きたくします",rm:"kitaku shimasu",id:"pulang ke rumah",cat:"🚶 Gerak"},
+  {jp:"でかけます",rm:"dekakemasu",id:"keluar rumah",cat:"🚶 Gerak"},
+  {jp:"はいります",rm:"hairimasu",id:"masuk",cat:"🚶 Gerak"},
+  {jp:"でます",rm:"demasu",id:"keluar",cat:"🚶 Gerak"},
+  {jp:"のります",rm:"norimasu",id:"naik kendaraan",cat:"🚶 Gerak"},
+  {jp:"おります",rm:"orimasu",id:"turun kendaraan",cat:"🚶 Gerak"},
+  {jp:"たちます",rm:"tachimasu",id:"berdiri",cat:"🚶 Gerak"},
+  {jp:"すわります",rm:"suwarimasu",id:"duduk",cat:"🚶 Gerak"},
+  {jp:"まちます",rm:"machimasu",id:"menunggu",cat:"🚶 Gerak"},
+  {jp:"いそぎます",rm:"isogimasu",id:"tergesa-gesa",cat:"🚶 Gerak"},
+  // KOMUNIKASI
+  {jp:"はなします",rm:"hanashimasu",id:"berbicara",cat:"💬 Komunikasi"},
+  {jp:"いいます",rm:"iimasu",id:"berkata",cat:"💬 Komunikasi"},
+  {jp:"ききます",rm:"kikimasu",id:"mendengar / bertanya",cat:"💬 Komunikasi"},
+  {jp:"よびます",rm:"yobimasu",id:"memanggil",cat:"💬 Komunikasi"},
+  {jp:"でんわをかけます",rm:"denwa o kakemasu",id:"menelepon",cat:"💬 Komunikasi"},
+  {jp:"あいます",rm:"aimasu",id:"bertemu",cat:"💬 Komunikasi"},
+  // BENDA
+  {jp:"みます",rm:"mimasu",id:"melihat / menonton",cat:"🛍️ Benda & Barang"},
+  {jp:"かいます",rm:"kaimasu",id:"membeli",cat:"🛍️ Benda & Barang"},
+  {jp:"かいものします",rm:"kaimono shimasu",id:"belanja",cat:"🛍️ Benda & Barang"},
+  {jp:"つかいます",rm:"tsukaimasu",id:"menggunakan",cat:"🛍️ Benda & Barang"},
+  {jp:"もちます",rm:"mochimasu",id:"membawa / memegang",cat:"🛍️ Benda & Barang"},
+  {jp:"とります",rm:"torimasu",id:"mengambil",cat:"🛍️ Benda & Barang"},
+  {jp:"きります",rm:"kirimasu",id:"memotong",cat:"🛍️ Benda & Barang"},
+  {jp:"さわります",rm:"sawarimasu",id:"menyentuh",cat:"🛍️ Benda & Barang"},
+  {jp:"あけます",rm:"akemasu",id:"membuka",cat:"🛍️ Benda & Barang"},
+  {jp:"しめます",rm:"shimemasu",id:"menutup",cat:"🛍️ Benda & Barang"},
+  {jp:"つけます",rm:"tsukemasu",id:"menyalakan / menempelkan",cat:"🛍️ Benda & Barang"},
+  {jp:"けします",rm:"keshimasu",id:"memadamkan / menghapus",cat:"🛍️ Benda & Barang"},
+  {jp:"はらいます",rm:"haraimasu",id:"membayar",cat:"🛍️ Benda & Barang"},
+  // PAKAIAN
+  {jp:"きます (baju atas)",rm:"kimasu",id:"memakai baju atas",cat:"👗 Pakaian"},
+  {jp:"はきます",rm:"hakimasu",id:"memakai baju bawah",cat:"👗 Pakaian"},
+  {jp:"かけます",rm:"kakemasu",id:"memakai kalung / kacamata",cat:"👗 Pakaian"},
+  // SOSIAL
+  {jp:"あげます",rm:"agemasu",id:"memberi",cat:"🤝 Sosial"},
+  {jp:"もらいます",rm:"moraimasu",id:"menerima",cat:"🤝 Sosial"},
+  {jp:"かします",rm:"kashimasu",id:"meminjamkan",cat:"🤝 Sosial"},
+  {jp:"かります",rm:"karimasu",id:"meminjam",cat:"🤝 Sosial"},
+  {jp:"かえします",rm:"kaeshimasu",id:"mengembalikan",cat:"🤝 Sosial"},
+  {jp:"わらいます",rm:"waraimasu",id:"tertawa",cat:"🤝 Sosial"},
+  {jp:"あそびます",rm:"asobimasu",id:"bermain",cat:"🤝 Sosial"},
+  {jp:"けっこんします",rm:"kekkon shimasu",id:"menikah",cat:"🤝 Sosial"},
+  // KEBERADAAN
+  {jp:"います",rm:"imasu",id:"ada (makhluk hidup)",cat:"✨ Keberadaan"},
+  {jp:"あります",rm:"arimasu",id:"ada (benda)",cat:"✨ Keberadaan"},
+  {jp:"できます",rm:"dekimasu",id:"bisa / dapat dilakukan",cat:"✨ Keberadaan"},
+];
+
+const L=['A','B','C','D'];
+let mode='pg', sh=[], idx=0, fcI=0, cor=0, wrn=0, ans=0, locked=false, _opts=[];
+
+const esc=s=>s.replace(/'/g,"\\'");
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',['pg','fc','ty'][i]===m));
+  start();
+}
+
+function start(){
+  sh=shuffle(V); idx=0; fcI=0; cor=0; wrn=0; ans=0; locked=false;
+  document.getElementById('rs').style.display='none';
+  document.getElementById('qa').style.display='block';
+  upd();
+  if(mode==='fc') renderFC(); else renderQ();
+}
+
+function upd(){
+  document.getElementById('sc').textContent=cor;
+  document.getElementById('sw').textContent=wrn;
+  document.getElementById('st').textContent=ans;
+  const pct=Math.round((idx/sh.length)*100);
+  document.getElementById('pfill').style.width=pct+'%';
+  document.getElementById('ppct').textContent=pct+'%';
+  document.getElementById('ptxt').textContent=`Soal ${Math.min(idx+1,sh.length)} / ${sh.length}`;
+}
+
+function renderQ(){
+  locked=false;
+  if(idx>=sh.length){showResult();return}
+  const q=sh[idx];
+  const wrongs=shuffle(V.filter(v=>v.jp!==q.jp)).slice(0,3);
+  _opts=shuffle([q,...wrongs]);
+  const j2i=Math.random()>.45;
+
+  let h=`<div class="card"><div class="qtag">SOAL ${idx+1}/${sh.length} &nbsp;·&nbsp; ${q.cat}</div>`;
+  if(j2i){
+    h+=`<div class="qjp">${q.jp}</div><div class="qrm">${q.rm}</div>
+    <div class="qprompt">Artinya dalam Bahasa Indonesia?</div><div class="opts">`;
+    _opts.forEach((o,i)=>{
+      h+=`<button class="opt" id="o${i}" onclick="chk(${i},'${esc(o.jp)}','${esc(q.jp)}')">
+        <div class="oletter">${L[i]}</div><div class="otext">${o.id}</div></button>`;
+    });
+  } else {
+    h+=`<div class="qprompt" style="margin-bottom:8px">Kata Jepang untuk:</div>
+    <div class="qidw">${q.id}</div><div class="opts">`;
+    _opts.forEach((o,i)=>{
+      h+=`<button class="opt" id="o${i}" onclick="chk(${i},'${esc(o.jp)}','${esc(q.jp)}')">
+        <div class="oletter">${L[i]}</div>
+        <div class="otext"><span class="ojp">${o.jp}</span><span class="orm">${o.rm}</span></div></button>`;
+    });
+  }
+  h+=`</div><div class="fb" id="fb"></div><button class="nxt" id="nxt" onclick="nxtQ()">Soal Berikutnya →</button></div>`;
+  document.getElementById('qa').innerHTML=h;
+}
+
+function chk(ci, cjp, qjp){
+  if(locked) return;
+  locked=true; ans++;
+  const ok=cjp===qjp;
+  if(ok) cor++; else wrn++;
+  upd();
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    b.disabled=true;
+    const jp=_opts[i].jp;
+    if(jp===qjp) b.classList.add('correct');
+    else if(i===ci && !ok) b.classList.add('wrong');
+    else b.classList.add('dim');
+  });
+  const q=sh[idx], fb=document.getElementById('fb');
+  if(ok){
+    fb.className='fb show ok';
+    fb.innerHTML=`<span class="fbi">✅</span><span>Benar! <b>${q.jp}</b> = ${q.id}</span>`;
+  } else {
+    fb.className='fb show no';
+    fb.innerHTML=`<span class="fbi">❌</span><span>Jawaban benar: <b>${q.jp}</b> (${q.rm}) = <b>${q.id}</b></span>`;
+  }
+  document.getElementById('nxt').classList.add('show');
+}
+
+function nxtQ(){idx++;upd();renderQ()}
+
+// FLASHCARD
+function renderFC(){
+  if(fcI>=sh.length){showResult();return}
+  const q=sh[fcI];
+  document.getElementById('qa').innerHTML=`
+  <div class="card">
+    <div class="qtag">KARTU ${fcI+1}/${sh.length} &nbsp;·&nbsp; ${q.cat}</div>
+    <div class="fcwrap" id="fc" onclick="this.classList.toggle('flip')">
+      <div class="fcin">
+        <div class="fcf">
+          <div class="qjp">${q.jp}</div>
+          <div class="qrm">${q.rm}</div>
+          <div class="fchint">👆 Ketuk untuk lihat arti</div>
+        </div>
+        <div class="fcb">
+          <div class="fcmean">${q.id}</div>
+          <div class="qrm" style="margin-top:10px">${q.rm}</div>
+          <div class="fchint">🔄 Ketuk untuk balik</div>
+        </div>
+      </div>
+    </div>
+    <div class="fcnav">
+      <button class="fcbtn" onclick="fcN(-1)">← Sebelumnya</button>
+      <button class="fcbtn fcnxt" onclick="fcN(1)">Selanjutnya →</button>
+    </div>
+  </div>`;
+}
+function fcN(d){
+  fcI=Math.max(0,Math.min(sh.length-1,fcI+d));
+  idx=fcI; upd(); renderFC();
+  if(fcI===sh.length-1&&d===1) setTimeout(showResult,500);
+}
+
+// KETIK
+function renderTY(){
+  locked=false;
+  if(idx>=sh.length){showResult();return}
+  const q=sh[idx];
+  document.getElementById('qa').innerHTML=`
+  <div class="card">
+    <div class="qtag">SOAL ${idx+1}/${sh.length} &nbsp;·&nbsp; ${q.cat}</div>
+    <div class="qjp">${q.jp}</div><div class="qrm">${q.rm}</div>
+    <div class="qprompt">Tulis artinya dalam Bahasa Indonesia:</div>
+    <input class="tyin" id="tyin" placeholder="Ketik jawaban..." autocomplete="off" onkeydown="if(event.key==='Enter')chkTY()">
+    <button class="tysub" onclick="chkTY()">Jawab ✓</button>
+    <div class="fb" id="fb"></div>
+    <button class="nxt" id="nxt" onclick="nxtTY()">Soal Berikutnya →</button>
+  </div>`;
+  setTimeout(()=>{const i=document.getElementById('tyin');if(i)i.focus()},80);
+}
+function chkTY(){
+  if(locked) return;
+  const inp=document.getElementById('tyin');
+  const v=inp.value.trim().toLowerCase(); if(!v) return;
+  locked=true; ans++;
+  const q=sh[idx];
+  const keys=q.id.toLowerCase().split(/[\s\/(),]+/).filter(k=>k.length>2);
+  const ok=keys.some(k=>v.includes(k));
+  if(ok) cor++; else wrn++;
+  upd(); inp.disabled=true;
+  inp.style.borderColor=ok?'var(--teal)':'var(--red)';
+  const fb=document.getElementById('fb');
+  if(ok){fb.className='fb show ok';fb.innerHTML=`<span class="fbi">✅</span><span>Benar! Jawaban: <b>${q.id}</b></span>`}
+  else{fb.className='fb show no';fb.innerHTML=`<span class="fbi">❌</span><span>Jawaban benar: <b>${q.id}</b></span>`}
+  document.getElementById('nxt').classList.add('show');
+}
+function nxtTY(){idx++;upd();renderTY()}
+
+function renderQ(){
+  if(mode==='ty'){renderTY();return}
+  if(mode==='fc'){renderFC();return}
+  locked=false;
+  if(idx>=sh.length){showResult();return}
+  const q=sh[idx];
+  const wrongs=shuffle(V.filter(v=>v.jp!==q.jp)).slice(0,3);
+  _opts=shuffle([q,...wrongs]);
+  const j2i=Math.random()>.45;
+  let h=`<div class="card"><div class="qtag">SOAL ${idx+1}/${sh.length} &nbsp;·&nbsp; ${q.cat}</div>`;
+  if(j2i){
+    h+=`<div class="qjp">${q.jp}</div><div class="qrm">${q.rm}</div>
+    <div class="qprompt">Artinya dalam Bahasa Indonesia?</div><div class="opts">`;
+    _opts.forEach((o,i)=>{h+=`<button class="opt" id="o${i}" onclick="chk(${i},'${esc(o.jp)}','${esc(q.jp)}')">
+      <div class="oletter">${L[i]}</div><div class="otext">${o.id}</div></button>`});
+  } else {
+    h+=`<div class="qprompt" style="margin-bottom:8px">Kata Jepang untuk:</div>
+    <div class="qidw">${q.id}</div><div class="opts">`;
+    _opts.forEach((o,i)=>{h+=`<button class="opt" id="o${i}" onclick="chk(${i},'${esc(o.jp)}','${esc(q.jp)}')">
+      <div class="oletter">${L[i]}</div>
+      <div class="otext"><span class="ojp">${o.jp}</span><span class="orm">${o.rm}</span></div></button>`});
+  }
+  h+=`</div><div class="fb" id="fb"></div><button class="nxt" id="nxt" onclick="nxtQ()">Soal Berikutnya →</button></div>`;
+  document.getElementById('qa').innerHTML=h;
+}
+
+function showResult(){
+  document.getElementById('qa').style.display='none';
+  const pct=Math.round((cor/Math.max(ans,1))*100);
+  let em='🎉',ti='Luar Biasa!';
+  if(pct<50){em='😓';ti='Ayo Semangat!'}
+  else if(pct<70){em='👍';ti='Cukup Bagus!'}
+  else if(pct<90){em='🌟';ti='Hebat!'}
+  const rs=document.getElementById('rs');
+  rs.style.display='block';
+  rs.innerHTML=`<div class="rcard">
+    <span class="remoji">${em}</span>
+    <div class="rtitle">${ti}</div>
+    <div class="rsub">Kamu menyelesaikan ${sh.length} soal!</div>
+    <div class="rpct">${pct}%</div>
+    <div class="rpctlbl">Tingkat Keberhasilan</div>
+    <div class="rstats">
+      <div class="ri"><div class="rinum" style="color:var(--teal)">${cor}</div><div class="rilbl">Benar</div></div>
+      <div class="ri"><div class="rinum" style="color:var(--red)">${wrn}</div><div class="rilbl">Salah</div></div>
+      <div class="ri"><div class="rinum" style="color:var(--gold)">${sh.length}</div><div class="rilbl">Total</div></div>
+    </div>
+    <div class="rbtns">
+      <button class="rbtn rbp" onclick="start()">🔄 Ulangi Kuis</button>
+      <button class="rbtn rbs" onclick="setMode('fc')">🃏 Review Flashcard</button>
+    </div>
+  </div>`;
+}
+
+window.onload=start;
+</script>
+</body>
+</html>
